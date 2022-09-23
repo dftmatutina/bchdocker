@@ -1,0 +1,56 @@
+version: "3.7"
+
+volumes:
+  db_data:
+    external: true
+
+services:
+
+    laravel: &laravel-template
+      image: ${COMPOSE_PROJECT_NAME}_laravel:latest
+      build:
+        context: .
+        args:
+          BUILD_ARGUMENT_ENV: dev
+          HOST_UID: ${HOST_UID}
+          HOST_GID: ${HOST_GID}
+        dockerfile: ./Dockerfile
+      container_name: ${COMPOSE_PROJECT_NAME}_laravel
+      expose:
+        - 80
+        - 443
+      ports:
+        - "8008:80"
+        - "8443:443"
+      volumes:
+        - ./app:/var/www/html:cached
+      depends_on:
+        - db
+      networks:
+        - cityheights
+
+    ### Cron tasks
+    supervisord:
+      <<: *laravel-template
+      container_name: ${COMPOSE_PROJECT_NAME}_supervisord
+      expose: []
+    db:
+      image: mysql:8.0
+      container_name: ${COMPOSE_PROJECT_NAME}-mysql8
+      restart: unless-stopped
+      environment:
+        MYSQL_DATABASE: dfmlupon
+        MYSQL_ROOT_PASSWORD: kapitan
+        MYSQL_PASSWORD: bantayan
+        MYSQL_USER: tanod
+        SERVICE_TAGS: dev
+        SERVICE_NAME: mysql
+      volumes:
+        - db_data:/var/lib/mysql
+        - ./docker/dev/init-db.sql:/docker-entrypoint-initdb.d
+      networks:
+        - cityheights
+
+networks:
+  cityheights:
+    driver: bridge
