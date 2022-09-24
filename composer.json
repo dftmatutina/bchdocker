@@ -1,0 +1,5 @@
+{
+    "require": {
+        "backpack/crud": "^5.3"
+    }
+}
